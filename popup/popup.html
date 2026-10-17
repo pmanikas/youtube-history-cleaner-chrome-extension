@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Watch History Cleaner</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <header>
+    <img src="../icons/icon32.png" alt="" width="24" height="24">
+    <h1>Watch History Cleaner</h1>
+  </header>
+
+  <nav class="tabs" role="tablist" aria-label="Mode" id="modes">
+    <button type="button" role="tab" data-mode="delete">Remove</button>
+    <button type="button" role="tab" data-mode="find">Find only</button>
+  </nav>
+
+  <main id="setup">
+    <p class="mode-hint" id="mode-hint"></p>
+
+    <section>
+      <h2 id="category-heading">What to clear</h2>
+      <div class="segmented" role="radiogroup" aria-labelledby="category-heading" id="categories">
+        <button type="button" role="radio" data-category="all">All</button>
+        <button type="button" role="radio" data-category="videos">Videos</button>
+        <button type="button" role="radio" data-category="shorts">Shorts</button>
+        <button type="button" role="radio" data-category="music">Music</button>
+        <button type="button" role="radio" data-category="podcasts">Podcasts</button>
+      </div>
+    </section>
+
+    <section>
+      <label for="date-preset" class="field-label">When watched</label>
+      <select id="date-preset"></select>
+      <div class="date-range" id="custom-range" hidden>
+        <label>From <input type="date" id="date-from"></label>
+        <label>To <input type="date" id="date-to"></label>
+      </div>
+      <small class="note">Uses the date headings on your history page.</small>
+    </section>
+
+    <section id="scope-section">
+      <h2>Which items</h2>
+      <label class="choice" id="scope-all-label">
+        <input type="radio" name="scope" value="all" id="scope-all">
+        <span>
+          <strong id="scope-all-title"></strong>
+          <small id="scope-all-note"></small>
+        </span>
+      </label>
+      <label class="choice">
+        <input type="radio" name="scope" value="keyword" id="scope-keyword">
+        <span>
+          <strong>Only titles containing a keyword</strong>
+          <small>Not case sensitive.</small>
+        </span>
+      </label>
+    </section>
+
+    <section id="keyword-section">
+      <label for="keyword" class="field-label" id="keyword-label">Keyword</label>
+      <input type="text" id="keyword" placeholder="e.g. minecraft" autocomplete="off" spellcheck="false" maxlength="100">
+      <label class="check">
+        <input type="checkbox" id="match-channel">
+        Also match the channel name
+      </label>
+    </section>
+
+    <section id="find-section">
+      <h2>How to show matches</h2>
+      <label class="choice">
+        <input type="radio" name="find-style" value="step" id="find-step" checked>
+        <span>
+          <strong>One at a time</strong>
+          <small>Stops at each match until you click Next.</small>
+        </span>
+      </label>
+      <label class="choice">
+        <input type="radio" name="find-style" value="first" id="find-first">
+        <span>
+          <strong>Find the first <input type="number" id="find-limit" value="20" min="1" max="500" aria-label="Number of matches"> matches</strong>
+          <small>Highlights them all, then you can jump between them.</small>
+        </span>
+      </label>
+    </section>
+
+    <section class="inline" id="speed-section">
+      <label for="speed" class="field-label">Speed</label>
+      <select id="speed">
+        <option value="fast">Fast</option>
+        <option value="normal" selected>Normal</option>
+        <option value="careful">Careful (if items get missed)</option>
+      </select>
+    </section>
+
+    <p class="error" id="error" role="alert" hidden></p>
+
+    <button type="button" class="primary" id="start">Clear history</button>
+  </main>
+
+  <main id="confirm" hidden>
+    <h2>Are you sure?</h2>
+    <p id="confirm-text"></p>
+    <p class="warn">Removed items can't be restored.</p>
+    <div class="buttons">
+      <button type="button" class="secondary" id="cancel">Cancel</button>
+      <button type="button" class="danger" id="confirm-go">Yes, remove</button>
+    </div>
+  </main>
+
+  <main id="running" hidden>
+    <h2 id="run-title">Cleaning…</h2>
+    <p id="run-message"></p>
+    <div class="stats">
+      <div id="run-deleted-box"><b id="run-deleted">0</b><span>removed</span></div>
+      <div id="run-found-box"><b id="run-found">0</b><span>found</span></div>
+      <div id="run-scanned-box"><b id="run-scanned">0</b><span>checked</span></div>
+      <div id="run-failed-box"><b id="run-failed">0</b><span>failed</span></div>
+    </div>
+    <div class="buttons">
+      <button type="button" class="secondary" id="prev" hidden>Previous</button>
+      <button type="button" class="primary-sm" id="next" hidden>Next match</button>
+      <button type="button" class="danger" id="stop">Stop</button>
+      <button type="button" class="secondary" id="done" hidden>New search</button>
+    </div>
+    <p class="hint">You can close this popup. Progress and the same buttons also show on the YouTube page.</p>
+  </main>
+
+  <footer>
+    Runs only in your browser and collects no data.
+    Not affiliated with YouTube or Google.
+  </footer>
+
+  <script type="module" src="popup.js"></script>
+</body>
+</html>

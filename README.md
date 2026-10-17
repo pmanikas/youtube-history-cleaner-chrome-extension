@@ -62,6 +62,8 @@ Safety checks: a removal job stops immediately if the selected filter tab is no 
 - `PRIVACY.md`: privacy policy (needed for the Chrome Web Store).
 - `LICENSE`: MIT.
 - `package.json`: no dependencies, just `npm run zip` to build the upload archive.
+- `store/`: 1280x800 screenshots for the Chrome Web Store listing.
+- `docs/`: raw popup captures the store screenshots are built from.
 
 ## Packaging
 

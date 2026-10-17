@@ -10,6 +10,7 @@
     "url": "git+https://github.com/pmanikas/youtube-history-cleaner-chrome-extension.git"
   },
   "scripts": {
-    "zip": "rm -f youtube-history-cleaner.zip && zip -r -X youtube-history-cleaner.zip manifest.json popup src icons -x '*.DS_Store' && unzip -l youtube-history-cleaner.zip"
+    "zip": "rm -f youtube-history-cleaner.zip && zip -r -X youtube-history-cleaner.zip manifest.json popup src icons -x '*.DS_Store' && unzip -l youtube-history-cleaner.zip",
+    "screenshots": "bash tools/screenshots.sh"
   }
 }

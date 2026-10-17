@@ -64,10 +64,13 @@ Safety checks: a removal job stops immediately if the selected filter tab is no 
 - `package.json`: no dependencies, just `npm run zip` to build the upload archive.
 - `store/`: 1280x800 screenshots for the Chrome Web Store listing.
 - `docs/`: raw popup captures the store screenshots are built from.
+- `tools/`: `screenshots.sh` (listing copy) and `make-screenshot.swift` (the drawing).
 
 ## Packaging
 
 `npm run zip` writes `youtube-history-cleaner.zip` containing `manifest.json`, `popup/`, `src/` and `icons/` and nothing else, ready to upload to the Chrome Web Store. It uses the system `zip` command, so there are no dependencies to install. The zip itself is gitignored.
+
+`npm run screenshots` rebuilds the 1280x800 listing screenshots in `store/` from the popup captures in `docs/`. Edit the headlines and bullets in `tools/screenshots.sh`, then re-run it. macOS only: the drawing is a Swift script using CoreGraphics, so it needs the Xcode command line tools and nothing else. Replace the captures in `docs/` when the popup changes.
 
 ## Chrome Web Store notes
 

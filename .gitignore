@@ -4,3 +4,11 @@
 
 # Packaged extension
 *.zip
+
+# AI tooling
+.claude/
+CLAUDE.md
+AGENTS.md
+.cursor/
+.cursorrules
+.aider*

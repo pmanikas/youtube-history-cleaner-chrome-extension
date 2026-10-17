@@ -61,6 +61,11 @@ Safety checks: a removal job stops immediately if the selected filter tab is no 
 - `src/shared.js`: shared option rules.
 - `PRIVACY.md`: privacy policy (needed for the Chrome Web Store).
 - `LICENSE`: MIT.
+- `package.json`: no dependencies, just `npm run zip` to build the upload archive.
+
+## Packaging
+
+`npm run zip` writes `youtube-history-cleaner.zip` containing `manifest.json`, `popup/`, `src/` and `icons/` and nothing else, ready to upload to the Chrome Web Store. It uses the system `zip` command, so there are no dependencies to install. The zip itself is gitignored.
 
 ## Chrome Web Store notes
 

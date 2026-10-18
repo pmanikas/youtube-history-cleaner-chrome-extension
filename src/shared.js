@@ -23,17 +23,19 @@ export const SPEEDS = {
   careful: 500,
 };
 
+// label: what the dropdown shows.
+// phrase: a sentence fragment for the confirmation ("every Short <phrase>").
 // days: the last N days including today.
 // olderThan: watched more than N days ago.
 export const DATE_PRESETS = {
   any: { label: 'Any time' },
-  today: { label: 'Today', days: 1 },
-  week: { label: 'Last 7 days', days: 7 },
-  month: { label: 'Last 30 days', days: 30 },
-  quarter: { label: 'Last 90 days', days: 90 },
-  year: { label: 'Last 12 months', days: 365 },
-  older30: { label: 'Older than 30 days', olderThan: 30 },
-  older365: { label: 'Older than 1 year', olderThan: 365 },
+  today: { label: 'Today', days: 1, phrase: 'watched today' },
+  week: { label: 'Last 7 days', days: 7, phrase: 'watched in the last 7 days' },
+  month: { label: 'Last 30 days', days: 30, phrase: 'watched in the last 30 days' },
+  quarter: { label: 'Last 90 days', days: 90, phrase: 'watched in the last 90 days' },
+  year: { label: 'Last 12 months', days: 365, phrase: 'watched in the last 12 months' },
+  older30: { label: 'Older than 30 days', olderThan: 30, phrase: 'watched more than 30 days ago' },
+  older365: { label: 'Older than 1 year', olderThan: 365, phrase: 'watched more than a year ago' },
   custom: { label: 'Custom range' },
 };
 
@@ -60,12 +62,31 @@ export function resolveDateRange(preset, customFrom = '', customTo = '', today =
   return { from: '', to: daysAgo(p.olderThan + 1, today) };
 }
 
+// 'YYYY-MM-DD' -> "3 Oct 2024" in the reader's own locale. Parsed as a
+// local date so the day never shifts across time zones.
+export function formatDate(value) {
+  const parts = ISO_DATE.test(value || '') ? value.split('-').map(Number) : null;
+  if (!parts) return value || '';
+
+  return new Date(parts[0], parts[1] - 1, parts[2]).toLocaleDateString(undefined, {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  });
+}
+
+// A sentence fragment that reads correctly after "every Short…":
+// "watched in the last 7 days", "watched between 1 Jan 2026 and 1 Feb 2026".
+// Empty when no date filter is set.
 export function describeDateRange({ dateFrom, dateTo, datePreset }) {
+  const phrase = DATE_PRESETS[datePreset]?.phrase;
+  if (phrase) return phrase;
   if (!dateFrom && !dateTo) return '';
-  if (datePreset && datePreset !== 'custom') return DATE_PRESETS[datePreset].label.toLowerCase();
-  if (dateFrom && dateTo) return `watched from ${dateFrom} to ${dateTo}`;
-  if (dateFrom) return `watched since ${dateFrom}`;
-  return `watched on or before ${dateTo}`;
+  if (dateFrom && dateTo) {
+    return `watched between ${formatDate(dateFrom)} and ${formatDate(dateTo)}`;
+  }
+  if (dateFrom) return `watched on or after ${formatDate(dateFrom)}`;
+  return `watched on or before ${formatDate(dateTo)}`;
 }
 
 // Returns an error string, or null when the options are allowed.

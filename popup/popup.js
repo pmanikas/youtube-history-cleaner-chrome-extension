@@ -83,11 +83,16 @@ function render() {
   const scopeAll = $('scope-all');
   scopeAll.disabled = !allowEverything;
   $('scope-all-label').classList.toggle('disabled', !allowEverything);
+  // "All" is a tab name, not a noun, so it can't be dropped into the
+  // sentence the way "Shorts" or "Music" can.
+  const where = category.label === 'All' ? 'your history' : category.label;
   $('scope-all-title').textContent =
-    `Everything in ${category.label}${$('date-preset').value !== 'any' ? ' in this date range' : ''}`;
+    $('date-preset').value === 'any'
+      ? `Everything in ${where}`
+      : `Everything in ${where}, in this date range`;
   $('scope-all-note').textContent = allowEverything
     ? 'No keyword needed.'
-    : `Not allowed. Clearing all ${category.label === 'All' ? 'history' : 'videos'} needs a keyword or a date range.`;
+    : 'Add a keyword or pick a date range to enable this.';
 
   scopeAll.checked = ui.scope === 'all';
   $('scope-keyword').checked = ui.scope === 'keyword';
@@ -121,14 +126,18 @@ function describe(options) {
     podcasts: 'every Podcast item',
   }[options.category];
 
-  let text = `This will remove ${what} from your YouTube watch history`;
+  // "every Short watched in the last 7 days whose title contains “x”
+  //  from your YouTube watch history (Shorts tab)."
+  let text = `This will remove ${what}`;
+
+  const dates = describeDateRange(options);
+  if (dates) text += ` ${dates}`;
 
   if (options.useKeyword) {
     text += ` whose title${options.matchChannel ? ' or channel' : ''} contains “${options.keyword}”`;
   }
 
-  const dates = describeDateRange(options);
-  if (dates) text += `${options.useKeyword ? ',' : ''} ${dates}`;
+  text += ' from your YouTube watch history';
 
   return `${text}${category.label === 'All' ? '' : ` (${category.label} tab)`}.`;
 }

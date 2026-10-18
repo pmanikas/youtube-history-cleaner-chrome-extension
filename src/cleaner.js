@@ -950,12 +950,30 @@
     return ` ${state.hidden} item${state.hidden === 1 ? ' that didn’t' : 's that didn’t'} match ${state.hidden === 1 ? 'was' : 'were'} hidden from this page to keep it fast — ${state.hidden === 1 ? 'it is' : 'they are'} still in your history. Reload the page to see ${state.hidden === 1 ? 'it' : 'them'}.`;
   }
 
+  // 'YYYY-MM-DD' -> "3 Oct 2024" in the reader's own locale. Parsed as a
+  // local date so the day never shifts across time zones. Presentation
+  // only; shared.js has the same helper for the popup.
+  function formatDate(value) {
+    if (!ISO_DATE.test(value || '')) return value || '';
+
+    const [year, month, day] = value.split('-').map(Number);
+    return new Date(year, month - 1, day).toLocaleDateString(undefined, {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+    });
+  }
+
   function describeFilter() {
     const parts = [];
-    if (state.keyword) parts.push(`"${state.keyword}"`);
-    if (state.dateFrom && state.dateTo) parts.push(`${state.dateFrom} to ${state.dateTo}`);
-    else if (state.dateFrom) parts.push(`since ${state.dateFrom}`);
-    else if (state.dateTo) parts.push(`on or before ${state.dateTo}`);
+    if (state.keyword) parts.push(`“${state.keyword}”`);
+    if (state.dateFrom && state.dateTo) {
+      parts.push(`${formatDate(state.dateFrom)} to ${formatDate(state.dateTo)}`);
+    } else if (state.dateFrom) {
+      parts.push(`since ${formatDate(state.dateFrom)}`);
+    } else if (state.dateTo) {
+      parts.push(`on or before ${formatDate(state.dateTo)}`);
+    }
     return parts.join(', ');
   }
 
@@ -1403,7 +1421,6 @@
 
       const title = document.createElement('p');
       title.className = 'title';
-      title.textContent = 'Watch History Cleaner';
 
       const msg = document.createElement('p');
       msg.className = 'msg';
@@ -1459,7 +1476,7 @@
       wrap.append(title, msg, stats, row);
       root.append(style, wrap);
 
-      els = { msg, stats, prev, next, remove, stop, close };
+      els = { title, msg, stats, prev, next, remove, stop, close };
     }
 
     function stat(label, value) {
@@ -1483,6 +1500,10 @@
         els.msg.classList.toggle('error', !!state.error);
 
         const finding = state.mode === 'find';
+
+        // The panel used to say "Watch History Cleaner" while running a
+        // find, which removes nothing.
+        els.title.textContent = `History Cleaner · ${finding ? 'Searching' : 'Removing'}`;
         const items = [finding ? stat('found', state.found) : stat('removed', state.deleted)];
         if (finding || state.useKeyword || state.dateFrom || state.dateTo) {
           items.push(stat('checked', state.scanned));

@@ -49,10 +49,10 @@ Going the other way, the **Remove** tab's confirmation offers **See them first**
 ## How it works
 
 1. The popup validates your choice and asks for confirmation.
-2. The background worker reuses a YouTube tab (or opens one) and navigates it to `https://www.youtube.com/feed/history`. It never navigates a non-YouTube tab away.
+2. The background worker opens a **new** tab on `https://www.youtube.com/feed/history`. It never touches a tab you already have open, so a video you were watching keeps playing and nothing you were reading gets navigated away. Each run gets a clean history page, with no filter chip already chosen and nothing already scrolled — and leaves its own tab behind for you to close.
 3. The page script selects the matching filter tab (All, Videos, Shorts, Music, Podcasts). If the tab is missing, which happens because of a YouTube bug, it clicks a different tab and looks again, several times.
 4. It removes matching items through YouTube's own "Remove from watch history" control (the X button or the ⋮ menu), Shorts row by row as in the original script, then scrolls for more until history runs out.
-5. A panel in the bottom-right of the page shows progress and has a **Stop** button. You can also stop from the popup, or run `window.__YTHC_STOP__ = true` in the console. (`window.__YT_SHORTS_CLEANER_STOP__`, the name the original Shorts-only script used, still works.)
+5. A panel in the bottom-right of the page shows progress and has a **Stop** button. Drag it by its title if it covers something. You can also stop from the popup, or run `window.__YTHC_STOP__ = true` in the console. (`window.__YT_SHORTS_CLEANER_STOP__`, the name the original Shorts-only script used, still works.)
 
 Safety checks: a removal job stops immediately if the selected filter tab is no longer selected, or if you leave the history page. Shorts mode only removes items that link to `/shorts/`, and Videos mode never removes Shorts. If the Music or Podcasts tab can't be found, nothing is removed. If the Shorts or Videos tab can't be found, it falls back to the All tab and filters by link type.
 
@@ -112,7 +112,7 @@ The captures used to be taken by hand and drifted away from the real popup, so r
 ## Chrome Web Store notes
 
 - Single purpose: removing items from the user's own YouTube watch history.
-- Permission justifications: `scripting` re-attaches the page script to YouTube tabs that were open before install; host access to `www.youtube.com` is needed to read and act on the history page.
+- Permission justifications: host access to `www.youtube.com` is needed to read and act on the history page. `scripting` is a safety net only — a cleanup always opens its own tab, where the manifest's content script loads on its own, and the one `executeScript` call covers the case where it hasn't registered by the time the job starts. It could be dropped if that fallback is removed.
 - Data usage: no data collected; no remote code.
 - The name uses "for YouTube" and the listing should say it is not affiliated with YouTube or Google. Don't use YouTube's logo in the icon or screenshots' branding.
 

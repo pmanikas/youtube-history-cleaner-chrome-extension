@@ -5,31 +5,15 @@ import { HISTORY_URL, validateOptions } from './shared.js';
 
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 
-const isYouTube = url => typeof url === 'string' && url.startsWith('https://www.youtube.com/');
 const isHistory = url => typeof url === 'string' && url.startsWith(HISTORY_URL);
 
-// Prefer the active tab if it's YouTube, then any YouTube tab already on
-// history, then any YouTube tab, otherwise open a new one. A non-YouTube
-// tab the user is looking at is never navigated away.
+// Always a fresh tab. Reusing one meant navigating a YouTube tab the user
+// was already using — losing their place in a video, and leaving the page
+// scrolled and filtered by the cleanup afterwards. A new tab also starts
+// from a clean history page every time, with no filter chip already
+// selected and nothing already scrolled.
 async function getHistoryTab() {
-  const [active] = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
-  const ytTabs = await chrome.tabs.query({ url: 'https://www.youtube.com/*' });
-
-  let tab =
-    (isYouTube(active?.url) && active) ||
-    ytTabs.find(t => isHistory(t.url)) ||
-    ytTabs[0];
-
-  if (!tab) {
-    return chrome.tabs.create({ url: HISTORY_URL, active: true });
-  }
-
-  if (!isHistory(tab.url)) {
-    tab = await chrome.tabs.update(tab.id, { url: HISTORY_URL, active: true });
-  } else if (!tab.active) {
-    await chrome.tabs.update(tab.id, { active: true });
-  }
-
+  const tab = await chrome.tabs.create({ url: HISTORY_URL, active: true });
   await chrome.windows.update(tab.windowId, { focused: true }).catch(() => {});
   return tab;
 }
@@ -59,8 +43,9 @@ async function ensureContentScript(tabId) {
   for (let i = 0; i < 20; i++) {
     if (await ping(tabId)) return;
 
-    // Tabs opened before the extension was installed don't have the
-    // content script yet.
+    // The manifest's content script runs on every youtube.com load, so a
+    // tab we just created should already have it. This is the safety net
+    // for the case where it didn't register in time.
     if (i === 4) {
       await chrome.scripting
         .executeScript({ target: { tabId }, files: ['src/cleaner.js'] })

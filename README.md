@@ -29,6 +29,16 @@ The **Find only** tab searches the same way (category, keyword and/or dates) but
 
 The buttons are in the popup and in the panel on the page. **Close** on the page panel clears the highlights.
 
+### Removing what you found
+
+When a search finishes, **Remove these N** appears in the popup and in the page panel. It removes exactly the highlighted cards and nothing else: every card is re-checked against the search's own category, keyword and date filters before anything is clicked, and a match YouTube has re-rendered away is counted as failed rather than guessed at.
+
+The popup asks for confirmation with the count in it. The page panel has no confirmation view, so its button arms on the first click (**Click again to remove**) and acts on the second, disarming itself after five seconds.
+
+A search always needs a keyword or a date range, so this path can never reach an unfiltered history. That rule is checked again before the removal starts.
+
+Going the other way, the **Remove** tab's confirmation offers **See them first** whenever the same options would work as a search. It runs them as a Find (highlighting up to 500 matches) so you can see the count and the items before deciding.
+
 ## Install (unpacked)
 
 1. Unzip `youtube-history-cleaner.zip` (or use this folder).

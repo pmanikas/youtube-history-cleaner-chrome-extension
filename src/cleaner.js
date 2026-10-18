@@ -134,6 +134,8 @@
     message: state.message,
     error: state.error,
     panelOpen: panel.isOpen(),
+    matchCount: matches.length,
+    canRemoveMatches: !removeMatchesProblem(),
   });
 
   function report(message, { error = false } = {}) {
@@ -1118,6 +1120,101 @@
     if (matches.length && job.findStyle === 'first') focusMatch(0);
   }
 
+  // ------------------------------------------------------------
+  // Removing exactly what a find highlighted
+  // ------------------------------------------------------------
+
+  // null when the highlighted matches may be removed, otherwise why not.
+  function removeMatchesProblem() {
+    if (state.running) return 'A cleanup or search is already running in this tab.';
+    if (!job || job.mode !== 'find') return 'Run a search first.';
+    if (!matches.length) return 'Nothing is highlighted to remove.';
+
+    // A find always needed a keyword or a date range, so this can never
+    // reach a whole unfiltered history. Checked again rather than assumed.
+    if (!job.keyword && !job.dateFrom && !job.dateTo) {
+      return 'Highlighted items can only be removed when a keyword or a date range was used.';
+    }
+
+    if (!onHistoryPage()) return 'You left the history page.';
+    return null;
+  }
+
+  async function runRemoveMatches(total) {
+    report(`Removing ${total} highlighted item${total === 1 ? '' : 's'}…`);
+
+    // Each match is tried once, so count the misses here rather than
+    // relying on markFailed()'s retry threshold.
+    let failed = 0;
+
+    for (let i = 0; i < total; i++) {
+      if (shouldStop() || !filterStillActive()) break;
+
+      const card = resolveMatch(i);
+
+      if (!card) {
+        // YouTube re-rendered the page and this match is gone. Never
+        // guess at a replacement.
+        state.failed = ++failed;
+        continue;
+      }
+
+      card.scrollIntoView({ behavior: 'instant', block: 'center' });
+
+      const before = state.deleted;
+      await deleteCard(card);
+      if (state.deleted === before) state.failed = ++failed;
+    }
+  }
+
+  // Removes the cards the find highlighted and nothing else. The job's
+  // own filters stay in place, so deleteCard() re-checks every card
+  // against them before clicking anything.
+  async function removeMatches() {
+    const total = matches.length;
+
+    job.mode = 'delete';
+
+    Object.assign(state, {
+      mode: 'delete',
+      running: true,
+      finished: false,
+      stopRequested: false,
+      waiting: false,
+      deleted: 0,
+      failed: 0,
+      error: null,
+    });
+    window.__YT_SHORTS_CLEANER_STOP__ = false;
+
+    panel.show();
+
+    try {
+      await runRemoveMatches(total);
+    } catch (err) {
+      console.error('[History Cleaner]', err);
+      fail(`Something went wrong: ${err?.message || err}`);
+    } finally {
+      closeOpenMenu();
+
+      const stopped = shouldStop();
+      state.running = false;
+      state.waiting = false;
+      state.finished = true;
+
+      // The outlines pointed at items that are gone now.
+      clearHighlights();
+      state.found = 0;
+
+      if (!state.error) {
+        report(
+          `${stopped ? 'Stopped' : 'Done'}. Removed ${state.deleted} of ${total} highlighted item${total === 1 ? '' : 's'}` +
+            (state.failed ? `, ${state.failed} couldn't be removed (search again to retry).` : '.')
+        );
+      }
+    }
+  }
+
   async function run(options) {
     const category = CATEGORIES[options.category];
     const finding = options.mode === 'find';
@@ -1207,6 +1304,17 @@
     let host = null;
     let els = null;
 
+    // The panel's Remove button is irreversible and has no confirmation
+    // view to fall back on, so it arms on the first click and only acts
+    // on a second one.
+    let armed = false;
+    let armTimer = null;
+
+    function disarm() {
+      clearTimeout(armTimer);
+      armed = false;
+    }
+
     function build() {
       host = document.createElement('div');
       host.id = 'ythc-panel-host';
@@ -1223,11 +1331,13 @@
         .msg.error { color: #ff8a80; }
         .stats { display: flex; gap: 12px; margin: 0 0 10px; color: #aaa; font-size: 12px; }
         .stats b { color: #fff; font-weight: 600; }
-        .row { display: flex; gap: 8px; justify-content: flex-end; }
+        .row { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; }
         button { font: inherit; font-weight: 500; border: 0; border-radius: 18px; padding: 6px 14px; cursor: pointer; }
         .stop { background: #cc0000; color: #fff; }
         .close, .prev { background: #3f3f3f; color: #fff; }
         .next { background: #f1f1f1; color: #0f0f0f; }
+        .remove { background: #5a2020; color: #ffb4ab; }
+        .remove.armed { background: #cc0000; color: #fff; font-weight: 600; }
         [hidden] { display: none !important; }
       `;
 
@@ -1263,19 +1373,37 @@
       next.textContent = 'Next match';
       next.addEventListener('click', () => step(1));
 
+      const remove = document.createElement('button');
+      remove.className = 'remove';
+      remove.addEventListener('click', () => {
+        if (armed) {
+          disarm();
+          removeMatches();
+          return;
+        }
+
+        armed = true;
+        armTimer = setTimeout(() => {
+          disarm();
+          panel.update();
+        }, 5000);
+        panel.update();
+      });
+
       const close = document.createElement('button');
       close.className = 'close';
       close.textContent = 'Close';
       close.addEventListener('click', () => {
+        disarm();
         host.remove();
         if (!state.running) clearHighlights();
       });
 
-      row.append(prev, next, stop, close);
+      row.append(prev, next, remove, stop, close);
       wrap.append(title, msg, stats, row);
       root.append(style, wrap);
 
-      els = { msg, stats, prev, next, stop, close };
+      els = { msg, stats, prev, next, remove, stop, close };
     }
 
     function stat(label, value) {
@@ -1310,6 +1438,15 @@
         els.next.hidden = !(finding && (state.waiting || browsing));
         els.next.textContent = state.running ? 'Next match' : 'Next';
         els.prev.hidden = !(browsing && matches.length > 1);
+
+        const canRemove = !removeMatchesProblem();
+        if (!canRemove && armed) disarm();
+        els.remove.hidden = !canRemove;
+        els.remove.classList.toggle('armed', armed);
+        els.remove.textContent = armed
+          ? 'Click again to remove'
+          : `Remove these ${matches.length}`;
+
         els.stop.hidden = !state.running;
         els.close.hidden = state.running;
       },
@@ -1365,6 +1502,19 @@
 
         run(msg.options);
         sendResponse({ ok: true });
+        return;
+      }
+
+      case 'ythc:remove-matches': {
+        const problem = removeMatchesProblem();
+        if (problem) {
+          sendResponse({ ok: false, error: problem });
+          return;
+        }
+
+        const count = matches.length;
+        removeMatches();
+        sendResponse({ ok: true, count });
         return;
       }
 

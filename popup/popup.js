@@ -1,6 +1,7 @@
 import {
   CATEGORIES,
   DATE_PRESETS,
+  MAX_FIND_LIMIT,
   describeDateRange,
   isoDate,
   resolveDateRange,
@@ -181,6 +182,15 @@ function showError(message) {
 
 let activeTabId = null;
 
+// The last progress state the running view drew, so the confirmation can
+// quote the number of highlighted matches.
+let lastState = null;
+
+// Which view Cancel returns to, and whether confirming means "remove the
+// highlighted matches" rather than "start a new cleanup".
+let confirmReturn = 'setup';
+let confirmRemovesMatches = false;
+
 async function findActiveJob() {
   const tabs = await chrome.tabs.query({ url: 'https://www.youtube.com/*' });
 
@@ -201,17 +211,19 @@ async function findActiveJob() {
 
 async function sendToTab(type) {
   const job = activeTabId !== null ? { tabId: activeTabId } : await findActiveJob();
-  if (!job) return;
+  if (!job) return null;
 
   try {
-    await chrome.tabs.sendMessage(job.tabId, { type });
+    return await chrome.tabs.sendMessage(job.tabId, { type });
   } catch {
     // Tab is gone.
+    return null;
   }
 }
 
 function renderProgress(state) {
   show('running');
+  lastState = state;
 
   const finding = state.mode === 'find';
 
@@ -239,6 +251,10 @@ function renderProgress(state) {
   $('next').hidden = !canStep;
   $('next').textContent = state.running ? 'Next match' : 'Next';
   $('prev').hidden = !(finding && !state.running && state.found > 1);
+
+  // The whole point of Find: act on exactly what you just looked at.
+  $('remove-found').hidden = !state.canRemoveMatches;
+  $('remove-found').textContent = `Remove these ${state.matchCount ?? 0}`;
 
   $('stop').hidden = !state.running;
   $('done').hidden = state.running;
@@ -342,14 +358,79 @@ $('start').addEventListener('click', () => {
     return;
   }
 
+  confirmReturn = 'setup';
+  confirmRemovesMatches = false;
   $('confirm-text').textContent = describe(options);
+  $('preview').hidden = !previewOptions(options);
   show('confirm');
   $('cancel').focus();
 });
 
-$('cancel').addEventListener('click', () => show('setup'));
+// Removing exactly the items a find highlighted, with the count in the
+// confirmation because this is the one path that knows it.
+$('remove-found').addEventListener('click', () => {
+  const count = lastState?.matchCount ?? 0;
 
-$('confirm-go').addEventListener('click', () => {
+  confirmReturn = 'running';
+  confirmRemovesMatches = true;
+  $('confirm-text').textContent =
+    `This will remove the ${count} highlighted item${count === 1 ? '' : 's'} from your YouTube watch history.`;
+  $('preview').hidden = true;
+  show('confirm');
+  $('cancel').focus();
+});
+
+// The same options run as a search, so the count is known before anything
+// is removed. Null when a search couldn't run on them (no keyword, no dates).
+function previewOptions(options) {
+  const next = {
+    ...options,
+    mode: 'find',
+    findStyle: 'first',
+    findLimit: MAX_FIND_LIMIT,
+  };
+
+  return validateOptions(next) ? null : next;
+}
+
+$('preview').addEventListener('click', () => {
+  const next = previewOptions(readOptions());
+
+  if (!next) {
+    show('setup');
+    return;
+  }
+
+  // Keep the form in step with what is about to run, so "New search"
+  // starts from the same place.
+  ui.mode = 'find';
+  $('find-first').checked = true;
+  $('find-limit').value = String(next.findLimit);
+  render();
+
+  startJob(next);
+});
+
+$('cancel').addEventListener('click', () => {
+  confirmRemovesMatches = false;
+  show(confirmReturn);
+});
+
+$('confirm-go').addEventListener('click', async () => {
+  if (confirmRemovesMatches) {
+    confirmRemovesMatches = false;
+    show('running');
+
+    const res = await sendToTab('ythc:remove-matches');
+
+    if (!res?.ok) {
+      $('run-message').textContent = res?.error || 'Could not remove the highlighted items.';
+      $('run-message').className = 'error';
+    }
+
+    return;
+  }
+
   const options = readOptions();
   const problem = validateOptions(options);
 
@@ -368,6 +449,8 @@ $('prev').addEventListener('click', () => sendToTab('ythc:prev'));
 
 $('done').addEventListener('click', () => {
   activeTabId = null;
+  lastState = null;
+  confirmReturn = 'setup';
   show('setup');
   render();
 });

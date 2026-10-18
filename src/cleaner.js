@@ -157,8 +157,18 @@
     }
   }
 
-  const shouldStop = () =>
-    state.stopRequested || window.__YT_SHORTS_CLEANER_STOP__ === true;
+  // __YT_SHORTS_CLEANER_STOP__ is the name the original Shorts-only console
+  // script used and the one older README copies documented. Kept as an
+  // alias so an instruction someone wrote down still works.
+  const stopFlagSet = () =>
+    window.__YTHC_STOP__ === true || window.__YT_SHORTS_CLEANER_STOP__ === true;
+
+  function clearStopFlags() {
+    window.__YTHC_STOP__ = false;
+    window.__YT_SHORTS_CLEANER_STOP__ = false;
+  }
+
+  const shouldStop = () => state.stopRequested || stopFlagSet();
 
   // ------------------------------------------------------------
   // Cards
@@ -1256,7 +1266,7 @@
       failed: 0,
       error: null,
     });
-    window.__YT_SHORTS_CLEANER_STOP__ = false;
+    clearStopFlags();
 
     panel.show();
 
@@ -1330,7 +1340,7 @@
       hidden: 0,
       error: null,
     });
-    window.__YT_SHORTS_CLEANER_STOP__ = false;
+    clearStopFlags();
 
     panel.show();
     report('Opening watch history…');
@@ -1359,7 +1369,7 @@
             : `${state.stopRequested ? 'Stopped' : 'Done'}. No matches found.`
         );
       } else {
-        const stopped = state.stopRequested || window.__YT_SHORTS_CLEANER_STOP__ === true;
+        const stopped = shouldStop();
         report(
           `${stopped ? 'Stopped' : 'Done'}. Removed ${state.deleted} item${state.deleted === 1 ? '' : 's'}` +
             (state.failed ? `, ${state.failed} couldn't be removed (run again to retry).` : '.') +

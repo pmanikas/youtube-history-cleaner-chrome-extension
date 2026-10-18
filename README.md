@@ -52,7 +52,7 @@ Going the other way, the **Remove** tab's confirmation offers **See them first**
 2. The background worker reuses a YouTube tab (or opens one) and navigates it to `https://www.youtube.com/feed/history`. It never navigates a non-YouTube tab away.
 3. The page script selects the matching filter tab (All, Videos, Shorts, Music, Podcasts). If the tab is missing, which happens because of a YouTube bug, it clicks a different tab and looks again, several times.
 4. It removes matching items through YouTube's own "Remove from watch history" control (the X button or the ⋮ menu), Shorts row by row as in the original script, then scrolls for more until history runs out.
-5. A panel in the bottom-right of the page shows progress and has a **Stop** button. You can also stop from the popup, or run `window.__YT_SHORTS_CLEANER_STOP__ = true` in the console.
+5. A panel in the bottom-right of the page shows progress and has a **Stop** button. You can also stop from the popup, or run `window.__YTHC_STOP__ = true` in the console. (`window.__YT_SHORTS_CLEANER_STOP__`, the name the original Shorts-only script used, still works.)
 
 Safety checks: a removal job stops immediately if the selected filter tab is no longer selected, or if you leave the history page. Shorts mode only removes items that link to `/shorts/`, and Videos mode never removes Shorts. If the Music or Podcasts tab can't be found, nothing is removed. If the Shorts or Videos tab can't be found, it falls back to the All tab and filters by link type.
 

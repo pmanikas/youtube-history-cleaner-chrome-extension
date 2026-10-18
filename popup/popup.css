@@ -108,11 +108,28 @@ section.inline .field-label { margin: 0; }
   border: 1px solid var(--line);
   border-radius: 8px;
   margin-bottom: 6px;
-  cursor: pointer;
 }
-.choice input { margin-top: 3px; }
+label.choice { cursor: pointer; }
+.choice > input { margin-top: 3px; }
 .choice small { display: block; color: var(--muted); }
-.choice.disabled { opacity: .55; cursor: not-allowed; }
+.choice.disabled { opacity: .7; }
+.choice.disabled, .choice.disabled > input { cursor: not-allowed; }
+
+/* The card is what the eye follows, so it takes the focus ring and the
+   radio inside it gives its own up. Fields inside the card keep theirs. */
+.choice:has(> input:focus-visible) {
+  outline: 2px solid var(--focus);
+  outline-offset: 1px;
+}
+.choice > input:focus-visible { outline: none; }
+
+.limit {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+  color: var(--muted);
+}
 
 .field-label { display: block; font-weight: 600; margin-bottom: 4px; }
 
@@ -242,7 +259,7 @@ footer {
 }
 
 #find-limit {
-  width: 56px;
+  width: 64px;
   padding: 1px 4px;
   border: 1px solid var(--line);
   border-radius: 4px;

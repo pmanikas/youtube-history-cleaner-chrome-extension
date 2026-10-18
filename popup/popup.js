@@ -106,7 +106,11 @@ function render() {
   if (!allowEverything) ui.scope = 'keyword';
 
   const scopeAll = $('scope-all');
-  scopeAll.disabled = !allowEverything;
+  // aria-disabled, not disabled: a disabled radio drops out of the tab order,
+  // so the note saying how to enable it — which is also its description —
+  // would never be reached from the keyboard. Choosing it bounces back
+  // instead, in the change handler below.
+  scopeAll.setAttribute('aria-disabled', String(!allowEverything));
   $('scope-all-label').classList.toggle('disabled', !allowEverything);
   // "All" is a tab name, not a noun, so it can't be dropped into the
   // sentence the way "Shorts" or "Music" can.
@@ -337,6 +341,13 @@ arrowKeys($('categories'), 'both', chooseCategory);
 
 for (const radio of document.querySelectorAll('input[name="scope"]')) {
   radio.addEventListener('change', () => {
+    // Reachable but not choosable: re-rendering puts the choice back where
+    // it was, and the radio's description says what would enable it.
+    if (radio.getAttribute('aria-disabled') === 'true') {
+      render();
+      return;
+    }
+
     ui.scope = radio.value;
     render();
     if (ui.scope === 'keyword') $('keyword').focus();
@@ -348,16 +359,21 @@ for (const radio of document.querySelectorAll('input[name="scope"]')) {
 $('setup').addEventListener('input', () => { touched = true; }, true);
 $('setup').addEventListener('click', () => { touched = true; }, true);
 
-for (const id of ['keyword', 'find-limit', 'date-from', 'date-to']) {
+for (const id of ['keyword', 'date-from', 'date-to']) {
   $(id).addEventListener('input', render);
 }
 for (const id of ['match-channel', 'speed', 'date-preset', 'find-step', 'find-first']) {
   $(id).addEventListener('change', render);
 }
-$('find-limit').addEventListener('focus', () => {
-  $('find-first').checked = true;
-  render();
-});
+// Using the number means choosing the option it belongs to. On use, not on
+// focus: the field is its own tab stop now, and tabbing past it on the way
+// to Find shouldn't change what was chosen.
+for (const event of ['input', 'mousedown']) {
+  $('find-limit').addEventListener(event, () => {
+    $('find-first').checked = true;
+    render();
+  });
+}
 
 $('keyword').addEventListener('keydown', event => {
   if (event.key === 'Enter') $('start').click();

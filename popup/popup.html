@@ -45,17 +45,19 @@
     <section id="scope-section">
       <h2>Which items</h2>
       <label class="choice" id="scope-all-label">
-        <input type="radio" name="scope" value="all" id="scope-all">
+        <input type="radio" name="scope" value="all" id="scope-all"
+               aria-labelledby="scope-all-title" aria-describedby="scope-all-note">
         <span>
           <strong id="scope-all-title"></strong>
           <small id="scope-all-note"></small>
         </span>
       </label>
       <label class="choice">
-        <input type="radio" name="scope" value="keyword" id="scope-keyword">
+        <input type="radio" name="scope" value="keyword" id="scope-keyword"
+               aria-labelledby="scope-keyword-title" aria-describedby="scope-keyword-note">
         <span>
-          <strong>Only titles containing a keyword</strong>
-          <small>Not case sensitive.</small>
+          <strong id="scope-keyword-title">Only titles containing a keyword</strong>
+          <small id="scope-keyword-note">Not case sensitive.</small>
         </span>
       </label>
     </section>
@@ -72,19 +74,27 @@
     <section id="find-section">
       <h2>How to show matches</h2>
       <label class="choice">
-        <input type="radio" name="find-style" value="step" id="find-step" checked>
+        <input type="radio" name="find-style" value="step" id="find-step" checked
+               aria-labelledby="find-step-title" aria-describedby="find-step-note">
         <span>
-          <strong>One at a time</strong>
-          <small>Stops at each match until you click Next.</small>
+          <strong id="find-step-title">One at a time</strong>
+          <small id="find-step-note">Stops at each match until you click Next.</small>
         </span>
       </label>
-      <label class="choice">
-        <input type="radio" name="find-style" value="first" id="find-first">
+      <!-- Not a <label>: the number field has to sit outside the radio's
+           label, or it ends up part of the radio's accessible name. -->
+      <div class="choice">
+        <input type="radio" name="find-style" value="first" id="find-first"
+               aria-labelledby="find-first-title" aria-describedby="find-first-note">
         <span>
-          <strong>Find the first <input type="number" id="find-limit" value="20" min="1" max="500" aria-label="Number of matches"> matches</strong>
-          <small>Highlights them all, then you can jump between them.</small>
+          <strong id="find-first-title"><label for="find-first">Several at once</label></strong>
+          <small id="find-first-note">Highlights them all, then you can jump between them.</small>
+          <span class="limit">
+            <label for="find-limit">How many</label>
+            <input type="number" id="find-limit" value="20" min="1" max="500">
+          </span>
         </span>
-      </label>
+      </div>
     </section>
 
     <section class="inline" id="speed-section">

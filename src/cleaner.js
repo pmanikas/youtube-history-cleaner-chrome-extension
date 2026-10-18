@@ -115,6 +115,8 @@
     found: 0,
     failed: 0,
     scanned: 0,
+    // Non-matching cards trimmed from the page view (not from history).
+    hidden: 0,
     message: 'Idle',
     error: null,
   };
@@ -133,6 +135,7 @@
     found: state.found,
     failed: state.failed,
     scanned: state.scanned,
+    hidden: state.hidden,
     message: state.message,
     error: state.error,
     panelOpen: panel.isOpen(),
@@ -421,8 +424,11 @@
         card.getBoundingClientRect().bottom < 0
       ) {
         // Already scrolled past and not a match: trim it from the
-        // page view so long keyword scans stay fast.
+        // page view so long keyword scans stay fast. Counted because
+        // items disappearing off a history page looks exactly like
+        // deletion, and it isn't one.
         card.remove();
+        state.hidden++;
       }
     }
 
@@ -904,6 +910,14 @@
     return false;
   }
 
+  // Non-matching cards are trimmed from the page as the scan passes them,
+  // which keeps long keyword scans fast but makes items vanish from a
+  // history page the user is watching. Say so, or it reads as deletion.
+  function hiddenNote() {
+    if (!state.hidden) return '';
+    return ` ${state.hidden} item${state.hidden === 1 ? ' that didn’t' : 's that didn’t'} match ${state.hidden === 1 ? 'was' : 'were'} hidden from this page to keep it fast — ${state.hidden === 1 ? 'it is' : 'they are'} still in your history. Reload the page to see ${state.hidden === 1 ? 'it' : 'them'}.`;
+  }
+
   function describeFilter() {
     const parts = [];
     if (state.keyword) parts.push(`"${state.keyword}"`);
@@ -1215,7 +1229,8 @@
       if (!state.error) {
         report(
           `${stopped ? 'Stopped' : 'Done'}. Removed ${state.deleted} of ${total} highlighted item${total === 1 ? '' : 's'}` +
-            (state.failed ? `, ${state.failed} couldn't be removed (search again to retry).` : '.')
+            (state.failed ? `, ${state.failed} couldn't be removed (search again to retry).` : '.') +
+            hiddenNote()
         );
       }
     }
@@ -1261,6 +1276,7 @@
       found: 0,
       failed: 0,
       scanned: 0,
+      hidden: 0,
       error: null,
     });
     window.__YT_SHORTS_CLEANER_STOP__ = false;
@@ -1295,7 +1311,8 @@
         const stopped = state.stopRequested || window.__YT_SHORTS_CLEANER_STOP__ === true;
         report(
           `${stopped ? 'Stopped' : 'Done'}. Removed ${state.deleted} item${state.deleted === 1 ? '' : 's'}` +
-            (state.failed ? `, ${state.failed} couldn't be removed (run again to retry).` : '.')
+            (state.failed ? `, ${state.failed} couldn't be removed (run again to retry).` : '.') +
+            hiddenNote()
         );
       }
     }

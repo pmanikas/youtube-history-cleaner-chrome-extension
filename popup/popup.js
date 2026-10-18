@@ -544,8 +544,12 @@ $('confirm-go').addEventListener('click', async () => {
     const res = await sendToTab('ythc:remove-matches');
 
     if (!res?.ok) {
-      $('run-message').textContent = res?.error || 'Could not remove the highlighted items.';
+      const problem = res?.error || 'Could not remove the highlighted items.';
+      $('run-message').textContent = problem;
       $('run-message').className = 'error';
+      // The only failure that never passes through renderProgress, so the
+      // live region is written by hand or this one goes unsaid.
+      $('run-status').textContent = sentence([problem]);
     }
 
     return;

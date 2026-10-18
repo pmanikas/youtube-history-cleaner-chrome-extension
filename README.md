@@ -103,7 +103,9 @@ npm run capture      # docs/popup-*.png, rendered from popup/
 npm run screenshots  # store/screenshot-*.png, built from docs/
 ```
 
-`npm run capture` serves a copy of `popup/` with a stub of the `chrome.*` calls the popup makes on load, sets up each state, and shoots it with headless Chrome at the popup's own 340x700. The captures used to be taken by hand and drifted away from the real popup, so run this whenever the popup changes rather than re-capturing manually. It needs Google Chrome in `/Applications`.
+`npm run capture` serves a copy of `popup/` with a stub of the `chrome.*` calls the popup makes on load, sets up each state, and shoots it with headless Chrome at 340x720. The real popup stops at Chrome's 600px ceiling and scrolls the form inside it; the captures lift that cap so one image shows the whole form instead of the first 600px of it. The `HEIGHT` constant in `tools/capture-popup.sh` and the `--window-size` it passes to Chrome have to stay in step.
+
+The captures used to be taken by hand and drifted away from the real popup, so run this whenever the popup changes rather than re-capturing manually. It needs Google Chrome in `/Applications`.
 
 `npm run screenshots` draws the 1280x800 listing images around those captures. Edit the headlines and bullets in `tools/screenshots.sh`, then re-run it. The drawing is a Swift script using CoreGraphics, so it needs the Xcode command line tools and nothing else.
 

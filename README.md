@@ -73,8 +73,8 @@ Safety checks: a removal job stops immediately if the selected filter tab is no 
 - `LICENSE`: MIT.
 - `package.json`: no dependencies; `npm test`, `npm run sync`, `npm run zip`, `npm run screenshots`.
 - `store/`: 1280x800 screenshots for the Chrome Web Store listing.
-- `docs/`: raw popup captures the store screenshots are built from.
-- `tools/`: `screenshots.sh` (listing copy) and `make-screenshot.swift` (the drawing).
+- `docs/`: popup captures the store screenshots are built from, generated from `popup/`.
+- `tools/`: `sync-shared.mjs` (generated constants), `capture-popup.sh` (the popup captures), `screenshots.sh` (listing copy) and `make-screenshot.swift` (the drawing).
 
 ## Shared constants
 
@@ -90,9 +90,20 @@ The content script's `validate()` still mirrors `validateOptions()` by hand; it 
 
 ## Packaging
 
-`npm run zip` writes `youtube-history-cleaner.zip` containing `manifest.json`, `popup/`, `src/` and `icons/` and nothing else, ready to upload to the Chrome Web Store. It uses the system `zip` command, so there are no dependencies to install. The zip itself is gitignored.
+`npm run zip` writes `youtube-history-cleaner.zip` containing `manifest.json`, `popup/`, `src/` and `icons/` and nothing else, ready to upload to the Chrome Web Store. It runs `npm test` first, so it won't package a `cleaner.js` whose constants are out of date. It uses the system `zip` command, so there are no dependencies to install. The zip itself is gitignored.
 
-`npm run screenshots` rebuilds the 1280x800 listing screenshots in `store/` from the popup captures in `docs/`. Edit the headlines and bullets in `tools/screenshots.sh`, then re-run it. macOS only: the drawing is a Swift script using CoreGraphics, so it needs the Xcode command line tools and nothing else. Replace the captures in `docs/` when the popup changes.
+## Store screenshots
+
+Two steps, both macOS only:
+
+```bash
+npm run capture      # docs/popup-*.png, rendered from popup/
+npm run screenshots  # store/screenshot-*.png, built from docs/
+```
+
+`npm run capture` serves a copy of `popup/` with a stub of the `chrome.*` calls the popup makes on load, sets up each state, and shoots it with headless Chrome at the popup's own 340x700. The captures used to be taken by hand and drifted away from the real popup, so run this whenever the popup changes rather than re-capturing manually. It needs Google Chrome in `/Applications`.
+
+`npm run screenshots` draws the 1280x800 listing images around those captures. Edit the headlines and bullets in `tools/screenshots.sh`, then re-run it. The drawing is a Swift script using CoreGraphics, so it needs the Xcode command line tools and nothing else.
 
 ## Chrome Web Store notes
 

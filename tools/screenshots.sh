@@ -28,8 +28,8 @@ swift tools/make-screenshot.swift \
 swift tools/make-screenshot.swift \
   store/screenshot-2-find.png \
   docs/popup-find.png \
-  "Find matches without deleting" \
+  "See what matches before you delete it" \
   "Find only highlights the items that match on the page, so you can look before anything is removed." \
   "Yellow outline on every match" \
   "Step through one at a time, or highlight up to 500" \
-  "Nothing is removed in this mode"
+  "Then remove exactly what you found, or nothing at all"

@@ -14,6 +14,7 @@
     "test": "node tools/sync-shared.mjs --check",
     "sync": "node tools/sync-shared.mjs",
     "zip": "npm test && rm -f youtube-history-cleaner.zip && zip -r -X youtube-history-cleaner.zip manifest.json popup src icons -x '*.DS_Store' && unzip -l youtube-history-cleaner.zip",
+    "capture": "bash tools/capture-popup.sh",
     "screenshots": "bash tools/screenshots.sh"
   }
 }

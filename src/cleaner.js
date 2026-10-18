@@ -987,8 +987,24 @@
     return parts.join(', ');
   }
 
+  // History loads newest first, so a range with no start date ("Older than
+  // 30 days") has to scroll past everything newer before the first match
+  // appears. Without a word that reads as a job that has hung, so the
+  // explanation stays on screen until the first match proves it works.
+  const slowStart = () =>
+    job.dateTo && !job.dateFrom
+      ? ` Your history loads newest first, so everything after ${formatDate(job.dateTo)} has to scroll past first — this can take a while.`
+      : '';
+
+  function scanMessage(tail = '') {
+    const base =
+      job.keyword || hasDateFilter() ? `Scanning for ${describeFilter()}…` : 'Removing…';
+    const note = state.deleted === 0 ? slowStart() : '';
+    return `${base}${tail}${note}`;
+  }
+
   async function runDelete() {
-    report(job.keyword || hasDateFilter() ? `Scanning for ${describeFilter()}…` : 'Removing…');
+    report(scanMessage());
 
     let idleScrolls = 0;
 
@@ -1013,7 +1029,7 @@
       // Nothing left to remove among loaded items: load more.
       report(
         job.keyword || hasDateFilter()
-          ? `Scanning for ${describeFilter()}… (${state.scanned} checked, ${state.deleted} removed)`
+          ? scanMessage(` (${state.scanned} checked, ${state.deleted} removed)`)
           : `Loading more history… (${state.deleted} removed)`
       );
 
@@ -1135,7 +1151,7 @@
     const limit = job.findStyle === 'first' ? job.findLimit : Infinity;
     let idleScrolls = 0;
 
-    report(`Searching for ${describeFilter()}…`);
+    report(`Searching for ${describeFilter()}…${slowStart()}`);
 
     outer: while (!shouldStop()) {
       if (!onHistoryPage()) {
@@ -1186,7 +1202,10 @@
       if (reachedOlderThanRange()) break;
       if (await advanceShelves()) continue;
 
-      report(`Searching for ${describeFilter()}… (${state.scanned} checked, ${matches.length} found)`);
+      report(
+      `Searching for ${describeFilter()}… (${state.scanned} checked, ${matches.length} found)` +
+        (matches.length === 0 ? slowStart() : '')
+    );
 
       if (await loadNextRows()) {
         idleScrolls = 0;

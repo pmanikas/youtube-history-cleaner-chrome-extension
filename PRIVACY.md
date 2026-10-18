@@ -15,4 +15,4 @@ Removed watch history items cannot be restored by this extension.
 
 This extension is not affiliated with, endorsed by, or sponsored by YouTube or Google LLC. YouTube is a trademark of Google LLC.
 
-Questions: contact the developer through the Chrome Web Store listing.
+Questions: contact the developer through the [Chrome Web Store listing](https://chromewebstore.google.com/detail/watch-history-cleaner-for/gmjbofkofpnflddoddjmcgaejcaofnoc).

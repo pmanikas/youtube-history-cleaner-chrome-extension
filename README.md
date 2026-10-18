@@ -2,6 +2,8 @@
 
 A Chrome extension (Manifest V3) that bulk-removes items from your YouTube watch history, or just finds and highlights them.
 
+**[Install from the Chrome Web Store](https://chromewebstore.google.com/detail/watch-history-cleaner-for/gmjbofkofpnflddoddjmcgaejcaofnoc)**
+
 ## Remove
 
 | What to clear | Everything | By keyword |
@@ -39,7 +41,9 @@ A search always needs a keyword or a date range, so this path can never reach an
 
 Going the other way, the **Remove** tab's confirmation offers **See them first** whenever the same options would work as a search. It runs them as a Find (highlighting up to 500 matches) so you can see the count and the items before deciding.
 
-## Install (unpacked)
+## Install
+
+The published build is on the [Chrome Web Store](https://chromewebstore.google.com/detail/watch-history-cleaner-for/gmjbofkofpnflddoddjmcgaejcaofnoc). To run this source instead, load it unpacked:
 
 1. Unzip `youtube-history-cleaner.zip` (or use this folder).
 2. Open `chrome://extensions`, turn on **Developer mode**.
@@ -112,6 +116,7 @@ The captures used to be taken by hand and drifted away from the real popup, so r
 ## Chrome Web Store notes
 
 - Single purpose: removing items from the user's own YouTube watch history.
+- Listing: https://chromewebstore.google.com/detail/watch-history-cleaner-for/gmjbofkofpnflddoddjmcgaejcaofnoc
 - Permission justifications: host access to `www.youtube.com` is needed to read and act on the history page. `scripting` is a safety net only — a cleanup always opens its own tab, where the manifest's content script loads on its own, and the one `executeScript` call covers the case where it hasn't registered by the time the job starts. It could be dropped if that fallback is removed.
 - Data usage: no data collected; no remote code.
 - The name uses "for YouTube" and the listing should say it is not affiliated with YouTube or Google. Don't use YouTube's logo in the icon or screenshots' branding.

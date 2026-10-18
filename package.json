@@ -6,6 +6,7 @@
   "type": "module",
   "license": "MIT",
   "author": "Pantelis Manikas",
+  "homepage": "https://chromewebstore.google.com/detail/watch-history-cleaner-for/gmjbofkofpnflddoddjmcgaejcaofnoc",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/pmanikas/youtube-history-cleaner-chrome-extension.git"

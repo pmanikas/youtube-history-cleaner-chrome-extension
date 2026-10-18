@@ -3,6 +3,7 @@
   "name": "Watch History Cleaner for YouTube",
   "short_name": "History Cleaner",
   "version": "1.2.0",
+  "homepage_url": "https://chromewebstore.google.com/detail/watch-history-cleaner-for/gmjbofkofpnflddoddjmcgaejcaofnoc",
   "description": "Bulk remove or find items in your YouTube watch history by type (All, Videos, Shorts, Music, Podcasts), keyword and date.",
   "permissions": [
     "scripting"

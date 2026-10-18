@@ -98,7 +98,11 @@ function render() {
   $('find-section').hidden = !finding;
   $('speed-section').hidden = finding;
 
+  // Find is read-only, so it gets the safe accent colour. Removing keeps
+  // the soft destructive style here and the solid red for the confirm.
   $('start').textContent = finding ? 'Find' : 'Clear history';
+  $('start').classList.toggle('primary', finding);
+  $('start').classList.toggle('destructive', !finding);
   $('done').textContent = finding ? 'New search' : 'New cleanup';
 
   const error = validateOptions(readOptions());

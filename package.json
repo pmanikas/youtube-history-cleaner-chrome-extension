@@ -5,7 +5,7 @@
   "private": true,
   "type": "module",
   "license": "MIT",
-  "author": "Pandelis Manikas",
+  "author": "Pantelis Manikas",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/pmanikas/youtube-history-cleaner-chrome-extension.git"

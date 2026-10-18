@@ -371,9 +371,39 @@
 
   let job = null;
 
-  // IDs already removed in this job, so a card YouTube re-renders
+  // Entries already removed in this job, so a card YouTube re-renders
   // isn't removed (or counted) twice.
+  //
+  // Keyed by entry, not by video: watching the same video on two days is
+  // two history entries and both should go. Keying on the video id alone
+  // removed only the first and silently skipped the rest.
   const removedIds = new Set();
+
+  // The day heading above a card, as written. Stable across re-renders,
+  // unlike the section element itself, so it can tell two entries for the
+  // same video apart.
+  function sectionKey(card) {
+    const section = card.closest(SECTION_SELECTOR);
+    if (!section) return '';
+    if (section.dataset.ythcKey) return section.dataset.ythcKey;
+
+    for (const selector of HEADING_SELECTORS) {
+      const heading = section.querySelector(selector);
+      if (heading && !heading.closest(CARD_SELECTOR)) {
+        const text = normalize(heading.textContent);
+        if (text) {
+          section.dataset.ythcKey = text;
+          return text;
+        }
+      }
+    }
+
+    return '';
+  }
+
+  // Two watches of the same video under the same day heading still
+  // collapse to one entry. Nothing the page shows tells them apart.
+  const entryKey = card => `${cardId(card)}|${sectionKey(card)}`;
 
   function matchesJob(card) {
     if (job.kind === 'short' && !isShortCard(card)) return false;
@@ -405,7 +435,7 @@
 
     for (const card of allCards(root)) {
       if (card.dataset.ythcDone === '1') continue;
-      if (removedIds.has(cardId(card))) {
+      if (removedIds.has(entryKey(card))) {
         card.dataset.ythcDone = '1';
         continue;
       }
@@ -539,6 +569,8 @@
     if (shouldStop() || !card?.isConnected || !matchesJob(card)) return false;
 
     const id = cardId(card);
+    // Read before the click: the card leaves the DOM right after.
+    const key = entryKey(card);
     const direct = getDirectRemoveButton(card);
 
     if (direct) {
@@ -567,7 +599,7 @@
     }
 
     card.dataset.ythcDone = '1';
-    if (id !== '?') removedIds.add(id);
+    if (id !== '?') removedIds.add(key);
     state.deleted++;
     report(`Removing… (${state.deleted} removed)`);
 
@@ -1007,7 +1039,7 @@
     const match = matches[i];
     if (match.el.isConnected) return match.el;
 
-    const el = allCards().find(card => cardId(card) === match.id);
+    const el = allCards().find(card => entryKey(card) === match.key);
     if (el) {
       el.dataset.ythcMatch = '1';
       el.dataset.ythcChecked = '1';
@@ -1091,18 +1123,19 @@
         card.dataset.ythcChecked = '1';
         markSeen(card);
 
-        const id = cardId(card);
-        if (matchedIds.has(id)) {
+        const key = entryKey(card);
+
+        if (matchedIds.has(key)) {
           // A re-rendered copy of a match we already have.
           card.dataset.ythcMatch = '1';
           continue;
         }
 
         if (!matchesJob(card)) continue;
-        if (id !== '?') matchedIds.add(id);
+        matchedIds.add(key);
 
         card.dataset.ythcMatch = '1';
-        matches.push({ el: card, id });
+        matches.push({ el: card, key });
         state.found = matches.length;
 
         if (job.findStyle === 'step') {

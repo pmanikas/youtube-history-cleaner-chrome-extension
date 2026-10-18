@@ -89,24 +89,27 @@ export function describeDateRange({ dateFrom, dateTo, datePreset }) {
   return `watched on or before ${formatDate(dateTo)}`;
 }
 
-// Returns an error string, or null when the options are allowed.
+// Returns null when the options are allowed, otherwise
+// { message, field } where `field` names the input the popup should
+// focus so the user can act on the message straight away.
 export function validateOptions(options) {
+  const problem = (message, field = null) => ({ message, field });
+
   const category = CATEGORIES[options?.category];
-  if (!category) return 'Unknown category.';
-  if (!['delete', 'find'].includes(options.mode)) return 'Unknown mode.';
-  if (!(options.speed in SPEEDS)) return 'Unknown speed.';
-  if (!(options.datePreset in DATE_PRESETS)) return 'Unknown date range.';
+  if (!category) return problem('Unknown category.');
+  if (!['delete', 'find'].includes(options.mode)) return problem('Unknown mode.');
+  if (!(options.speed in SPEEDS)) return problem('Unknown speed.', 'speed');
+  if (!(options.datePreset in DATE_PRESETS)) return problem('Unknown date range.', 'datePreset');
 
   const { dateFrom = '', dateTo = '' } = options;
 
-  if ((dateFrom && !ISO_DATE.test(dateFrom)) || (dateTo && !ISO_DATE.test(dateTo))) {
-    return 'Enter valid dates.';
-  }
+  if (dateFrom && !ISO_DATE.test(dateFrom)) return problem('Enter a valid start date.', 'dateFrom');
+  if (dateTo && !ISO_DATE.test(dateTo)) return problem('Enter a valid end date.', 'dateTo');
   if (options.datePreset === 'custom' && !dateFrom && !dateTo) {
-    return 'Pick a start date, an end date, or both.';
+    return problem('Pick a start date, an end date, or both.', 'dateFrom');
   }
   if (dateFrom && dateTo && dateFrom > dateTo) {
-    return 'The start date must be before the end date.';
+    return problem('The start date must be before the end date.', 'dateFrom');
   }
 
   const keyword = (options.keyword || '').trim();
@@ -114,15 +117,19 @@ export function validateOptions(options) {
   const hasDate = !!(dateFrom || dateTo);
 
   if (options.mode === 'find') {
-    if (keyword && !keywordOk) return `Keywords need at least ${MIN_KEYWORD_LENGTH} characters.`;
-    if (!keywordOk && !hasDate) return 'Enter a keyword or pick a date range to search for.';
+    if (keyword && !keywordOk) {
+      return problem(`Keywords need at least ${MIN_KEYWORD_LENGTH} characters.`, 'keyword');
+    }
+    if (!keywordOk && !hasDate) {
+      return problem('Enter a keyword or pick a date range to search for.', 'keyword');
+    }
     if (options.findStyle === 'first') {
       const n = Number(options.findLimit);
       if (!Number.isInteger(n) || n < 1 || n > MAX_FIND_LIMIT) {
-        return `Number of matches must be between 1 and ${MAX_FIND_LIMIT}.`;
+        return problem(`Number of matches must be between 1 and ${MAX_FIND_LIMIT}.`, 'findLimit');
       }
     } else if (options.findStyle !== 'step') {
-      return 'Unknown search style.';
+      return problem('Unknown search style.');
     }
     return null;
   }
@@ -132,8 +139,13 @@ export function validateOptions(options) {
   const needsKeyword = options.useKeyword || (!category.allowAll && !hasDate);
 
   if (needsKeyword && !keywordOk) {
-    if (options.useKeyword) return `Enter a keyword of at least ${MIN_KEYWORD_LENGTH} characters.`;
-    return `Clearing all ${category.label === 'All' ? 'history' : 'videos'} needs a keyword or a date range.`;
+    if (options.useKeyword) {
+      return problem(`Enter a keyword of at least ${MIN_KEYWORD_LENGTH} characters.`, 'keyword');
+    }
+    return problem(
+      `Clearing all ${category.label === 'All' ? 'history' : 'videos'} needs a keyword or a date range.`,
+      'keyword'
+    );
   }
 
   return null;

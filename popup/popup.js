@@ -21,6 +21,20 @@ const ui = {
   scope: 'all',
 };
 
+// Set once the user changes anything, so a freshly opened popup doesn't
+// greet them with a list of what's missing.
+let touched = false;
+
+// Which input each validation problem is about.
+const FIELDS = {
+  keyword: 'keyword',
+  dateFrom: 'date-from',
+  dateTo: 'date-to',
+  datePreset: 'date-preset',
+  findLimit: 'find-limit',
+  speed: 'speed',
+};
+
 function show(name) {
   for (const [key, el] of Object.entries(views)) el.hidden = key !== name;
 }
@@ -110,9 +124,14 @@ function render() {
   $('start').classList.toggle('destructive', !finding);
   $('done').textContent = finding ? 'New search' : 'New cleanup';
 
-  const error = validateOptions(readOptions());
-  $('start').disabled = !!error;
-  $('start').title = error || '';
+  // The button stays clickable. A disabled button with a title tooltip
+  // gave no visible reason and was skipped by screen readers, so an
+  // incomplete form showed a dead button and nothing else. Instead the
+  // reason is spelled out once the user has touched the form, and
+  // clicking anyway turns it into an error and focuses the field.
+  const problem = validateOptions(readOptions());
+  $('requirement').textContent = problem && touched ? problem.message : '';
+  $('requirement').hidden = !(problem && touched);
   $('error').hidden = true;
 }
 
@@ -140,6 +159,15 @@ function describe(options) {
   text += ' from your YouTube watch history';
 
   return `${text}${category.label === 'All' ? '' : ` (${category.label} tab)`}.`;
+}
+
+// Shows why the action can't run and puts the cursor where the fix is.
+function showProblem(problem) {
+  $('requirement').hidden = true;
+  showError(problem.message);
+
+  const field = FIELDS[problem.field];
+  if (field) $(field).focus();
 }
 
 function showError(message) {
@@ -250,6 +278,11 @@ for (const radio of document.querySelectorAll('input[name="scope"]')) {
   });
 }
 
+// Anything the user changes counts as touching the form. Captured so the
+// flag is set before the handler that re-renders runs.
+$('setup').addEventListener('input', () => { touched = true; }, true);
+$('setup').addEventListener('click', () => { touched = true; }, true);
+
 for (const id of ['keyword', 'find-limit', 'date-from', 'date-to']) {
   $(id).addEventListener('input', render);
 }
@@ -262,7 +295,7 @@ $('find-limit').addEventListener('focus', () => {
 });
 
 $('keyword').addEventListener('keydown', event => {
-  if (event.key === 'Enter' && !$('start').disabled) $('start').click();
+  if (event.key === 'Enter') $('start').click();
 });
 
 async function startJob(options) {
@@ -297,10 +330,10 @@ async function startJob(options) {
 
 $('start').addEventListener('click', () => {
   const options = readOptions();
-  const error = validateOptions(options);
+  const problem = validateOptions(options);
 
-  if (error) {
-    showError(error);
+  if (problem) {
+    showProblem(problem);
     return;
   }
 
@@ -318,11 +351,11 @@ $('cancel').addEventListener('click', () => show('setup'));
 
 $('confirm-go').addEventListener('click', () => {
   const options = readOptions();
-  const error = validateOptions(options);
+  const problem = validateOptions(options);
 
-  if (error) {
+  if (problem) {
     show('setup');
-    showError(error);
+    showProblem(problem);
     return;
   }
 

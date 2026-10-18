@@ -74,8 +74,8 @@ async function ensureContentScript(tabId) {
 }
 
 async function start(options) {
-  const error = validateOptions(options);
-  if (error) return { ok: false, error };
+  const problem = validateOptions(options);
+  if (problem) return { ok: false, error: problem.message };
 
   const tab = await getHistoryTab();
   await waitForTab(tab.id);

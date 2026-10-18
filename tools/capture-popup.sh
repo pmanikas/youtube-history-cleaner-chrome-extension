@@ -5,7 +5,11 @@
 #
 # The popup can't run outside the extension (it calls chrome.* on load), so
 # this serves a copy with a small stub of the APIs it touches, sets each
-# state, and shoots it with headless Chrome at the popup's own 340x700.
+# state, and shoots it with headless Chrome at the popup's own width.
+#
+# The real popup stops at Chrome's 600px ceiling and scrolls the form inside
+# it. These captures are of the form itself — one image, nothing cut off —
+# so they lift the cap and stand the popup up at its full height.
 #
 # macOS, and Google Chrome in /Applications. Run it with `npm run capture`,
 # then `npm run screenshots` to rebuild the store images.
@@ -33,7 +37,14 @@ import pathlib, sys
 root = pathlib.Path(sys.argv[1]) / "popup"
 html = (root / "popup.html").read_text()
 
+HEIGHT = 720
+
 STUB = """
+  <style>
+    /* Capture only: show the whole form in one shot instead of the first
+       600px of it. See the note at the top of capture-popup.sh. */
+    html, body { max-height: none; height: %dpx; }
+  </style>
   <script>
     // Just enough of the extension APIs for the popup to render.
     window.chrome = {
@@ -46,7 +57,7 @@ STUB = """
       tabs: { query: async () => [], sendMessage: async () => ({ ok: true }) },
     };
   </script>
-"""
+""" % HEIGHT
 
 html = html.replace('<script type="module"', STUB + '  <script type="module"')
 
@@ -92,7 +103,7 @@ for state in remove find; do
   "$CHROME" --headless --disable-gpu --hide-scrollbars \
     --force-color-profile=srgb --force-light-mode \
     --blink-settings=preferredColorScheme=1 \
-    --window-size=340,700 --virtual-time-budget=4000 \
+    --window-size=340,720 --virtual-time-budget=4000 \
     --screenshot="docs/popup-$state.png" \
     "http://localhost:$PORT/popup/capture-$state.html" >/dev/null 2>&1
   echo "wrote docs/popup-$state.png"

@@ -134,6 +134,9 @@
       <div id="run-scanned-box"><b id="run-scanned">0</b><span>checked</span></div>
       <div id="run-failed-box"><b id="run-failed">0</b><span>failed</span></div>
     </div>
+    <!-- The visible message and numbers change on every removal. This says
+         the same thing at a pace a screen reader can follow. -->
+    <p class="sr-only" id="run-status" role="status" aria-live="polite" aria-atomic="true"></p>
     <div class="buttons">
       <button type="button" class="btn secondary small" id="prev" hidden>Previous</button>
       <button type="button" class="btn primary small" id="next" hidden>Next match</button>

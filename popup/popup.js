@@ -235,13 +235,63 @@ async function sendToTab(type) {
   }
 }
 
+// How often the live region may repeat itself while the numbers climb.
+const PROGRESS_INTERVAL = 5000;
+
+let lastPhase = '';
+let lastSpokenAt = 0;
+
+function resetAnnouncements() {
+  lastPhase = '';
+  lastSpokenAt = 0;
+  $('run-status').textContent = '';
+}
+
+// Joins what there is to say into one sentence, whatever each part's own
+// punctuation is ("Cleaning…", "Done.").
+const sentence = parts =>
+  `${parts.filter(Boolean).map(part => String(part).replace(/[.…\s]+$/, '')).join('. ')}.`;
+
+// The message and the counters change once per removal, which is far faster
+// than a screen reader can read. So the live region speaks the moment the
+// job changes phase — found a match, stopped, finished — and otherwise only
+// every few seconds. While the job runs it reads the phase and the counts
+// rather than the message, which is the part that changes with every item.
+function announce(state, title) {
+  // Waiting at a match, or finished: every new message is a thing the user
+  // just did or asked for, so it is always worth saying. Mid-run it is the
+  // phase that matters, not the per-item message.
+  const settled = !state.running || state.waiting;
+  const phase = `${title}|${state.running}|${state.waiting}|${settled ? state.message : ''}`;
+  const now = Date.now();
+
+  if (phase === lastPhase && now - lastSpokenAt < PROGRESS_INTERVAL) return;
+
+  lastPhase = phase;
+  lastSpokenAt = now;
+
+  const counts = state.mode === 'find'
+    ? `${state.found} found, ${state.scanned} checked`
+    : `${state.deleted} removed`;
+
+  // The content script's closing message ("Done. Removed 12 items.") already
+  // carries the totals, so it is left to say it on its own.
+  const parts = !state.running && state.message
+    ? [state.message]
+    : state.waiting
+      ? [state.message, counts]
+      : [title, counts];
+
+  $('run-status').textContent = sentence(parts);
+}
+
 function renderProgress(state) {
   show('running');
   lastState = state;
 
   const finding = state.mode === 'find';
 
-  $('run-title').textContent = state.running
+  const title = state.running
     ? finding
       ? state.waiting
         ? 'Match found'
@@ -250,6 +300,8 @@ function renderProgress(state) {
     : state.error
       ? 'Stopped'
       : 'Finished';
+
+  $('run-title').textContent = title;
   $('run-message').textContent = state.message;
   $('run-message').className = state.error ? 'error' : '';
   $('run-deleted').textContent = state.deleted;
@@ -272,6 +324,8 @@ function renderProgress(state) {
 
   $('stop').hidden = !state.running;
   $('done').hidden = state.running;
+
+  announce(state, title);
 }
 
 chrome.runtime.onMessage.addListener((msg, sender) => {
@@ -380,6 +434,7 @@ $('keyword').addEventListener('keydown', event => {
 });
 
 async function startJob(options) {
+  resetAnnouncements();
   renderProgress({
     mode: options.mode,
     running: true,
@@ -515,6 +570,7 @@ $('prev').addEventListener('click', () => sendToTab('ythc:prev'));
 $('done').addEventListener('click', () => {
   activeTabId = null;
   lastState = null;
+  resetAnnouncements();
   confirmReturn = 'setup';
   show('setup');
   render();

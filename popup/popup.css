@@ -224,6 +224,18 @@ footer {
 
 [hidden] { display: none !important; }
 
+/* Text only a screen reader reads. */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
 .tabs { display: flex; border-bottom: 1px solid var(--line); padding: 0 16px; gap: 4px; }
 .tabs button {
   flex: 1;

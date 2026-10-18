@@ -61,7 +61,7 @@ Safety checks: a removal job stops immediately if the selected filter tab is no 
 - YouTube's interface must be in **English** (it looks for the "Remove from watch history" text and the English tab names).
 - YouTube changes its page structure often; if items stop being removed, try the **Careful** speed or reload the page and run again.
 - Matching uses only what the history page shows (title, channel). It does not use YouTube's own history search.
-- Watching the same video twice **under one day heading** counts as one entry. Entries are told apart by video and day, which is all the page shows, so same-day repeats collapse. Across different days they are removed separately, as they should be.
+- Entries are told apart by video **and** the day heading above them, which is all the page shows. Two entries for the same video on different days are removed separately. Two under the *same* heading are both removed when they load together, but collapse into one if they arrive in different batches as you scroll — run the cleanup again to catch the rest.
 - During a keyword or date cleanup, items that don't match are hidden from the page as the scan passes them so long scans stay fast. They are **not** removed; the finish message says how many were hidden, and reloading brings them back.
 
 ## Files

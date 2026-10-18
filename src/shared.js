@@ -7,14 +7,20 @@ export const HISTORY_URL = 'https://www.youtube.com/feed/history';
 export const MIN_KEYWORD_LENGTH = 2;
 export const MAX_FIND_LIMIT = 500;
 
-// category -> YouTube history filter chip label, and whether
-// "everything in this category" (no keyword) is allowed.
+// The single source of truth for the options. The content script can't
+// import modules, so its copy of this block is generated from here by
+// tools/sync-shared.mjs — change it here and run `npm run sync`.
+//
+// chip: the YouTube history filter chip label (matched case-insensitively).
+// allowAll: whether "everything in this category" (no keyword) is allowed.
+// kind: how the content script tells cards apart when it has to fall back
+// to the All tab.
 export const CATEGORIES = {
-  all: { label: 'All', chip: 'All', allowAll: false },
-  videos: { label: 'Videos', chip: 'Videos', allowAll: false },
-  shorts: { label: 'Shorts', chip: 'Shorts', allowAll: true },
-  music: { label: 'Music', chip: 'Music', allowAll: true },
-  podcasts: { label: 'Podcasts', chip: 'Podcasts', allowAll: true },
+  all: { label: 'All', chip: 'All', allowAll: false, kind: 'any' },
+  videos: { label: 'Videos', chip: 'Videos', allowAll: false, kind: 'video' },
+  shorts: { label: 'Shorts', chip: 'Shorts', allowAll: true, kind: 'short' },
+  music: { label: 'Music', chip: 'Music', allowAll: true, kind: 'any' },
+  podcasts: { label: 'Podcasts', chip: 'Podcasts', allowAll: true, kind: 'any' },
 };
 
 export const SPEEDS = {

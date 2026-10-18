@@ -68,13 +68,25 @@ Safety checks: a removal job stops immediately if the selected filter tab is no 
 - `popup/`: the popup UI.
 - `src/background.js`: opens the history tab and starts the job.
 - `src/cleaner.js`: the content script that does the cleaning (based on the original Shorts script).
-- `src/shared.js`: shared option rules.
+- `src/shared.js`: the single source of truth for the options.
 - `PRIVACY.md`: privacy policy (needed for the Chrome Web Store).
 - `LICENSE`: MIT.
-- `package.json`: no dependencies, just `npm run zip` to build the upload archive.
+- `package.json`: no dependencies; `npm test`, `npm run sync`, `npm run zip`, `npm run screenshots`.
 - `store/`: 1280x800 screenshots for the Chrome Web Store listing.
 - `docs/`: raw popup captures the store screenshots are built from.
 - `tools/`: `screenshots.sh` (listing copy) and `make-screenshot.swift` (the drawing).
+
+## Shared constants
+
+`src/shared.js` is the single source of truth for the options. Content scripts declared in the manifest can't import modules, so `src/cleaner.js` needs its own copy of `CATEGORIES`, `SPEEDS`, `MIN_KEYWORD_LENGTH` and `MAX_FIND_LIMIT`. That copy is generated, not hand-written:
+
+```bash
+npm run sync
+```
+
+`npm test` runs the same generator with `--check` and fails if the block in `cleaner.js` is out of date, so the two can't drift apart again. `npm run zip` runs it first and refuses to package a mismatch. Edit the constants in `shared.js` only — the block in `cleaner.js` is marked and overwritten.
+
+The content script's `validate()` still mirrors `validateOptions()` by hand; it is the last hand-copied piece.
 
 ## Packaging
 

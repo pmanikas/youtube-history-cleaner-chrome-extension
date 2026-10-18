@@ -3,6 +3,7 @@
   "version": "1.1.1",
   "description": "Chrome extension (MV3) that bulk-removes items from your YouTube watch history by category, keyword and date range, or just finds and highlights them.",
   "private": true,
+  "type": "module",
   "license": "MIT",
   "author": "Pandelis Manikas",
   "repository": {
@@ -10,7 +11,9 @@
     "url": "git+https://github.com/pmanikas/youtube-history-cleaner-chrome-extension.git"
   },
   "scripts": {
-    "zip": "rm -f youtube-history-cleaner.zip && zip -r -X youtube-history-cleaner.zip manifest.json popup src icons -x '*.DS_Store' && unzip -l youtube-history-cleaner.zip",
+    "test": "node tools/sync-shared.mjs --check",
+    "sync": "node tools/sync-shared.mjs",
+    "zip": "npm test && rm -f youtube-history-cleaner.zip && zip -r -X youtube-history-cleaner.zip manifest.json popup src icons -x '*.DS_Store' && unzip -l youtube-history-cleaner.zip",
     "screenshots": "bash tools/screenshots.sh"
   }
 }

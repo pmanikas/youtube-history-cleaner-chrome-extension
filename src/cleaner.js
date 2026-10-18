@@ -14,20 +14,22 @@
   if (window.__YTHC_LOADED__) return;
   window.__YTHC_LOADED__ = true;
 
-  // Keep in sync with src/shared.js.
-  const MIN_KEYWORD_LENGTH = 2;
-  const MAX_FIND_LIMIT = 500;
   const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
 
+  // >>> generated from src/shared.js by tools/sync-shared.mjs - do not edit >>>
+  const MIN_KEYWORD_LENGTH = 2;
+  const MAX_FIND_LIMIT = 500;
+
   const CATEGORIES = {
-    all: { label: 'All', chip: 'all', allowAll: false, kind: 'any' },
-    videos: { label: 'Videos', chip: 'videos', allowAll: false, kind: 'video' },
-    shorts: { label: 'Shorts', chip: 'shorts', allowAll: true, kind: 'short' },
-    music: { label: 'Music', chip: 'music', allowAll: true, kind: 'any' },
-    podcasts: { label: 'Podcasts', chip: 'podcasts', allowAll: true, kind: 'any' },
+    all: { label: 'All', chip: 'All', allowAll: false, kind: 'any' },
+    videos: { label: 'Videos', chip: 'Videos', allowAll: false, kind: 'video' },
+    shorts: { label: 'Shorts', chip: 'Shorts', allowAll: true, kind: 'short' },
+    music: { label: 'Music', chip: 'Music', allowAll: true, kind: 'any' },
+    podcasts: { label: 'Podcasts', chip: 'Podcasts', allowAll: true, kind: 'any' },
   };
 
   const SPEEDS = { fast: 120, normal: 250, careful: 500 };
+  // <<< generated <<<
 
   const CONFIG = {
     // YouTube UI needs a tiny amount of time to create the popup menu.
@@ -703,8 +705,12 @@
     return chips.map(el => ({ el, label: normalize(el.textContent) }));
   }
 
-  const findChip = label =>
-    findChips().find(chip => chip.label === label)?.el || null;
+  // Chip labels are compared normalized, so CATEGORIES can hold the
+  // readable "Shorts" and still match the page's own text.
+  const findChip = label => {
+    const wanted = normalize(label);
+    return findChips().find(chip => chip.label === wanted)?.el || null;
+  };
 
   const SELECTED_CLASS =
     /(^|\s)(iron-selected|ytChipShapeActive|selected|chip-selected)(\s|$)/;
@@ -871,7 +877,7 @@
 
     if (await selectChip(job.chip)) return true;
 
-    if (job.chip === 'all' && findChips().length === 0) {
+    if (job.chip === 'All' && findChips().length === 0) {
       // Older layout without a filter bar: the page is already "All".
       // Deleting here still needs a keyword or a dated range.
       job.requiresChip = false;
@@ -880,14 +886,14 @@
 
     if (category.kind === 'short' || category.kind === 'video') {
       // Fall back to the All tab and tell Shorts from videos by link.
-      const allSelected = findChips().length === 0 || (await selectChip('all'));
+      const allSelected = findChips().length === 0 || (await selectChip('All'));
 
       if (!allSelected) {
         fail(`Couldn't open the "${category.label}" tab. Reload the history page and try again.`);
         return false;
       }
 
-      job.chip = 'all';
+      job.chip = 'All';
       job.chipLabel = 'All';
       job.requiresChip = findChips().length > 0;
       report(`"${category.label}" tab not found, using All and filtering by type.`);

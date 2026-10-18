@@ -220,6 +220,8 @@ footer {
   cursor: pointer;
 }
 .tabs button[aria-selected="true"] { color: var(--fg); border-bottom-color: var(--fg); }
+/* The tabs reach the popup's edges, so their ring sits inside them. */
+.tabs button:focus-visible { outline-offset: -3px; }
 
 .mode-hint { margin: 0 0 12px; color: var(--muted); }
 .note { display: block; color: var(--muted); margin-top: 4px; font-size: 11px; }

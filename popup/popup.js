@@ -38,6 +38,9 @@ const FIELDS = {
 
 function show(name) {
   for (const [key, el] of Object.entries(views)) el.hidden = key !== name;
+  // The tabs control the setup panel. With the confirmation or the progress
+  // view up there is nothing for them to switch, so they go with it.
+  $('modes').hidden = name !== 'setup';
 }
 
 for (const [value, preset] of Object.entries(DATE_PRESETS)) {
@@ -76,11 +79,18 @@ function render() {
   const category = CATEGORIES[ui.category];
   const finding = ui.mode === 'find';
 
+  // Both groups are a single tab stop: the chosen item is the one Tab
+  // reaches, and the arrow keys move within the group from there.
   for (const button of $('modes').querySelectorAll('button')) {
-    button.setAttribute('aria-selected', String(button.dataset.mode === ui.mode));
+    const selected = button.dataset.mode === ui.mode;
+    button.setAttribute('aria-selected', String(selected));
+    button.tabIndex = selected ? 0 : -1;
+    if (selected) $('setup').setAttribute('aria-labelledby', button.id);
   }
   for (const button of $('categories').querySelectorAll('button')) {
-    button.setAttribute('aria-checked', String(button.dataset.category === ui.category));
+    const checked = button.dataset.category === ui.category;
+    button.setAttribute('aria-checked', String(checked));
+    button.tabIndex = checked ? 0 : -1;
   }
 
   $('mode-hint').textContent = finding
@@ -272,19 +282,58 @@ chrome.runtime.onMessage.addListener((msg, sender) => {
 // Events
 // ------------------------------------------------------------
 
+// A tablist and a radiogroup are each one stop in the tab order; the arrow
+// keys move inside them, taking the selection with the focus. `axis` is the
+// pair of keys the group answers to: the tabs run across, the chips wrap
+// over two rows, so they take the vertical keys as well.
+function arrowKeys(container, axis, choose) {
+  const horizontal = ['ArrowLeft', 'ArrowRight'];
+  const vertical = ['ArrowUp', 'ArrowDown'];
+  const keys = axis === 'both' ? [...horizontal, ...vertical] : horizontal;
+
+  container.addEventListener('keydown', event => {
+    const buttons = [...container.querySelectorAll('button')];
+    const from = buttons.indexOf(document.activeElement);
+    if (from < 0) return;
+
+    let to;
+    if (keys.includes(event.key)) {
+      const back = event.key === 'ArrowLeft' || event.key === 'ArrowUp';
+      to = (from + (back ? -1 : 1) + buttons.length) % buttons.length;
+    } else if (event.key === 'Home') {
+      to = 0;
+    } else if (event.key === 'End') {
+      to = buttons.length - 1;
+    } else {
+      return;
+    }
+
+    event.preventDefault();
+    touched = true;
+    choose(buttons[to]);
+    render();
+    buttons[to].focus();
+  });
+}
+
+const chooseMode = button => { ui.mode = button.dataset.mode; };
+const chooseCategory = button => { ui.category = button.dataset.category; };
+
 $('modes').addEventListener('click', event => {
   const button = event.target.closest('button[data-mode]');
   if (!button) return;
-  ui.mode = button.dataset.mode;
+  chooseMode(button);
   render();
 });
+arrowKeys($('modes'), 'horizontal', chooseMode);
 
 $('categories').addEventListener('click', event => {
   const button = event.target.closest('button[data-category]');
   if (!button) return;
-  ui.category = button.dataset.category;
+  chooseCategory(button);
   render();
 });
+arrowKeys($('categories'), 'both', chooseCategory);
 
 for (const radio of document.querySelectorAll('input[name="scope"]')) {
   radio.addEventListener('change', () => {

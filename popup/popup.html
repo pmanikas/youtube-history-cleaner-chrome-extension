@@ -11,22 +11,24 @@
     <h1>Watch History Cleaner</h1>
   </header>
 
-  <nav class="tabs" role="tablist" aria-label="Mode" id="modes">
-    <button type="button" role="tab" data-mode="delete">Remove</button>
-    <button type="button" role="tab" data-mode="find">Find only</button>
-  </nav>
+  <div class="tabs" role="tablist" aria-label="Mode" id="modes">
+    <button type="button" role="tab" id="mode-delete" data-mode="delete"
+            aria-controls="setup" aria-selected="true" tabindex="0">Remove</button>
+    <button type="button" role="tab" id="mode-find" data-mode="find"
+            aria-controls="setup" aria-selected="false" tabindex="-1">Find only</button>
+  </div>
 
-  <main id="setup">
+  <main id="setup" role="tabpanel" aria-labelledby="mode-delete">
     <p class="mode-hint" id="mode-hint"></p>
 
     <section>
       <h2 id="category-heading">What to clear</h2>
       <div class="segmented" role="radiogroup" aria-labelledby="category-heading" id="categories">
-        <button type="button" role="radio" data-category="all">All</button>
-        <button type="button" role="radio" data-category="videos">Videos</button>
-        <button type="button" role="radio" data-category="shorts">Shorts</button>
-        <button type="button" role="radio" data-category="music">Music</button>
-        <button type="button" role="radio" data-category="podcasts">Podcasts</button>
+        <button type="button" role="radio" data-category="all" tabindex="-1">All</button>
+        <button type="button" role="radio" data-category="videos" tabindex="-1">Videos</button>
+        <button type="button" role="radio" data-category="shorts" tabindex="0">Shorts</button>
+        <button type="button" role="radio" data-category="music" tabindex="-1">Music</button>
+        <button type="button" role="radio" data-category="podcasts" tabindex="-1">Podcasts</button>
       </div>
     </section>
 

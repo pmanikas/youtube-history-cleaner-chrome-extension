@@ -381,6 +381,10 @@
 
   let job = null;
 
+  // The options the current job was built from, so the panel's "Try again"
+  // can re-run a failed job without the user rebuilding it in the popup.
+  let lastOptions = null;
+
   // Entries already removed in this job, so a card YouTube re-renders
   // isn't removed (or counted) twice.
   //
@@ -1317,6 +1321,8 @@
   }
 
   async function run(options) {
+    lastOptions = options;
+
     const category = CATEGORIES[options.category];
     const finding = options.mode === 'find';
     const keyword = (options.keyword || '').trim();
@@ -1403,6 +1409,51 @@
   // the popup closes)
   // ------------------------------------------------------------
 
+  // The panel is pinned bottom-right at the top of the stacking order, so
+  // it sits over whatever YouTube has there. Let the user move it instead
+  // of making them choose between the panel and the page.
+  function makeDraggable(wrap, handle) {
+    let startX = 0;
+    let startY = 0;
+    let originX = 0;
+    let originY = 0;
+
+    const onMove = event => {
+      const box = wrap.getBoundingClientRect();
+      const x = originX + (event.clientX - startX);
+      const y = originY + (event.clientY - startY);
+
+      // Keep it reachable: never let it leave the viewport entirely.
+      wrap.style.left = `${Math.max(0, Math.min(x, window.innerWidth - box.width))}px`;
+      wrap.style.top = `${Math.max(0, Math.min(y, window.innerHeight - box.height))}px`;
+      wrap.style.right = 'auto';
+      wrap.style.bottom = 'auto';
+    };
+
+    const onUp = event => {
+      handle.releasePointerCapture?.(event.pointerId);
+      handle.removeEventListener('pointermove', onMove);
+      handle.removeEventListener('pointerup', onUp);
+      handle.removeEventListener('pointercancel', onUp);
+    };
+
+    handle.addEventListener('pointerdown', event => {
+      if (event.button !== 0) return;
+
+      const box = wrap.getBoundingClientRect();
+      startX = event.clientX;
+      startY = event.clientY;
+      originX = box.left;
+      originY = box.top;
+
+      handle.setPointerCapture?.(event.pointerId);
+      handle.addEventListener('pointermove', onMove);
+      handle.addEventListener('pointerup', onUp);
+      handle.addEventListener('pointercancel', onUp);
+      event.preventDefault();
+    });
+  }
+
   const panel = (() => {
     let host = null;
     let els = null;
@@ -1429,7 +1480,9 @@
           width: 300px; box-sizing: border-box; padding: 14px 16px; border-radius: 12px;
           background: #0f0f0f; color: #f1f1f1; font: 13px/1.4 Roboto, Arial, sans-serif;
           box-shadow: 0 6px 24px rgba(0,0,0,.35); }
-        .title { font-weight: 600; font-size: 14px; margin: 0 0 6px; }
+        .title { font-weight: 600; font-size: 14px; margin: -14px -16px 6px; padding: 14px 16px 6px;
+          cursor: grab; user-select: none; touch-action: none; }
+        .title:active { cursor: grabbing; }
         .msg { margin: 0 0 8px; color: #ddd; word-wrap: break-word; }
         .msg.error { color: #ff8a80; }
         .stats { display: flex; gap: 12px; margin: 0 0 10px; color: #aaa; font-size: 12px; }
@@ -1441,6 +1494,7 @@
         .next { background: #f1f1f1; color: #0f0f0f; }
         .remove { background: #5a2020; color: #ffb4ab; }
         .remove.armed { background: #cc0000; color: #fff; font-weight: 600; }
+        .retry { background: #f1f1f1; color: #0f0f0f; }
         [hidden] { display: none !important; }
       `;
 
@@ -1450,6 +1504,8 @@
 
       const title = document.createElement('p');
       title.className = 'title';
+      title.title = 'Drag to move';
+      makeDraggable(wrap, title);
 
       const msg = document.createElement('p');
       msg.className = 'msg';
@@ -1474,6 +1530,13 @@
       next.className = 'next';
       next.textContent = 'Next match';
       next.addEventListener('click', () => step(1));
+
+      const retry = document.createElement('button');
+      retry.className = 'retry';
+      retry.textContent = 'Try again';
+      retry.addEventListener('click', () => {
+        if (lastOptions && !state.running) run(lastOptions);
+      });
 
       const remove = document.createElement('button');
       remove.className = 'remove';
@@ -1501,11 +1564,11 @@
         if (!state.running) clearHighlights();
       });
 
-      row.append(prev, next, remove, stop, close);
+      row.append(prev, next, remove, retry, stop, close);
       wrap.append(title, msg, stats, row);
       root.append(style, wrap);
 
-      els = { title, msg, stats, prev, next, remove, stop, close };
+      els = { title, msg, stats, prev, next, remove, retry, stop, close };
     }
 
     function stat(label, value) {
@@ -1552,6 +1615,10 @@
         els.remove.textContent = armed
           ? 'Click again to remove'
           : `Remove these ${matches.length}`;
+
+        // A failed run is usually a YouTube timing problem, and the fix is
+        // to run the same thing again. Don't make the user rebuild it.
+        els.retry.hidden = !(state.error && !state.running && lastOptions);
 
         els.stop.hidden = !state.running;
         els.close.hidden = state.running;
